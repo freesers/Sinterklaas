@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sinterklaas Surprise Avontuur</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Mountains+of+Christmas:wght@700&display=swap');
+
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: #0f172a; 
+            font-family: 'Mountains+of+Christmas', cursive;
+            user-select: none; /* Voorkom selectie tijdens spelen */
+        }
+        
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #fbbf24;
+            font-size: 1.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            pointer-events: none;
+            background: rgba(0,0,0,0.3);
+            padding: 10px;
+            border-radius: 8px;
+        }
+        
+        #mute-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-family: sans-serif;
+            font-weight: bold;
+            cursor: pointer;
+            pointer-events: auto;
+            transition: background 0.2s;
+        }
+        #mute-btn:hover { background: rgba(255, 255, 255, 0.4); }
+
+
+        .level-card {
+            background: rgba(255, 250, 240, 0.98);
+            border: 4px solid #b91c1c;
+            padding: 2.5rem;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 650px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+            pointer-events: auto;
+            display: none;
+            color: #451a03;
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .poem {
+            font-family: 'Georgia', serif;
+            font-style: italic;
+            margin: 1.5rem 0;
+            color: #7f1d1d;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            white-space: pre-line;
+            background: rgba(255,255,255,0.7);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .btn {
+            background: #b91c1c;
+            color: #fffbeb;
+            padding: 12px 30px;
+            font-size: 1.3rem;
+            border: 2px solid #991b1b;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Mountains of Christmas', cursive;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+        .btn:hover { background: #991b1b; transform: translateY(-2px); }
+
+        @keyframes popIn {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        #start-screen { display: flex; }
+    </style>
+</head>
+<body>
+
+    <div class="hud">
+        <div>Pepernoten: <span id="score">0</span> / <span id="target">10</span></div>
+        <div style="font-size: 0.8em; color: #fcd34d;">Level <span id="level-display">1</span> - <span id="biome-name">De Binnenstad</span></div>
+    </div>
+    
+    <!-- Mute Button -->
+    <button id="mute-btn" onclick="toggleAudio()">🔊 Geluid Aan</button>
+
+    <div id="ui-layer">
+        
+        <!-- Start Scherm -->
+        <div id="start-screen" class="level-card" style="display: flex;">
+            <h1 class="text-4xl font-bold text-red-700 mb-2">De Magische Pakjesvlucht</h1>
+            <p class="mb-4 text-xl">Hallo Sara!</p>
+            <p class="text-lg mb-6">Vlieg met Ozosnel over de stad. Pas op voor schoorstenen, satellietschotels en... de Kerstman!</p>
+            <button class="btn" onclick="startGame()">Start Level 1 & Muziek 🎵</button>
+        </div>
+
+        <!-- Level 1 Klaar -->
+        <div id="level1-screen" class="level-card">
+            <h2 class="text-3xl font-bold text-yellow-600">Binnenstad Voltooid!</h2>
+            <div class="poem">
+                Wat heb je dat toch knap gedaan,
+                Zo vliegensvlug in het licht van de maan.
+                De eerste pepernoten zijn binnen,
+                Tijd om met het uitpakken te beginnen.
+                
+                Het eerste pakje ligt voor het grijpen,
+                Je hoeft niet naar een zolder te sluipen.
+                Zoek waar de warmte het huis binnenkomt,
+                Daar ligt iets waar je vast van smult.
+                *(Kijk bij de verwarming)*
+            </div>
+            <button class="btn" onclick="startLevel(2)">Naar de Grachten</button>
+        </div>
+
+        <!-- Level 2 Klaar -->
+        <div id="level2-screen" class="level-card">
+            <h2 class="text-3xl font-bold text-yellow-600">Kerstman Ontweken!</h2>
+            <div class="poem">
+                Die Kerstman vliegt ook overal doorheen,
+                Maar Ozosnel is sneller dan iedereen.
+                Je stuurt het paard met vaste hand,
+                Door het hele Nederland.
+
+                Het volgende pakje is klein en fijn,
+                Waar zou dat nu toch kunnen zijn?
+                Zoek naar een kleur, zo rood als wijn,
+                Of beter nog: een rode strik voor de gein.
+            </div>
+            <button class="btn" onclick="startLevel(3)">Naar het Sneeuwdorp</button>
+        </div>
+
+        <!-- Einde Spel -->
+        <div id="end-screen" class="level-card">
+            <h2 class="text-4xl font-bold text-green-600">Gefeliciteerd Sara!</h2>
+            <div class="poem">
+                De reis is ten einde, het paard is geland,
+                Je bent de beste ruiter van het land.
+                De Sint is trots, en Piet ook zeer,
+                Maar nu leg je het werk even neer.
+
+                Het laatste cadeau is speciaal voor jou,
+                Met je eigen naam, dus open het gauw!
+            </div>
+            <p class="text-lg text-red-700 mt-4">Vrolijk Sinterklaasfeest!</p>
+        </div>
+
+        <!-- Game Over -->
+        <div id="game-over-screen" class="level-card">
+            <h2 class="text-3xl font-bold text-red-600">Botsing!</h2>
+            <p id="crash-reason" class="mb-4 text-lg">Je vloog ergens tegenaan.</p>
+            <button class="btn" onclick="restartLevel()">Probeer Opnieuw</button>
+        </div>
+
+    </div>
+
+    <script>
+        // --- AUDIO ENGINE ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let isMuted = false;
+        let melodyTimeout;
+        let currentNoteIndex = 0;
+
+        // "Zie ginds komt de stoomboot" (op basis van PDF noten)
+        const NOTES = {
+            C4: 261.63, D4: 293.66, E4: 329.63, F4: 349.23, G4: 392.00, A4: 440.00, Bb4: 466.16, C5: 523.25, A5: 880.00
+        };
+
+        const MELODY = [
+            // Zie ginds komt de stoomboot uit Spanje weer aan
+            {n:'C4',d:0.4}, {n:'F4',d:0.4}, {n:'F4',d:0.4}, {n:'A4',d:0.4}, 
+            {n:'G4',d:0.4}, {n:'G4',d:0.4}, {n:'Bb4',d:0.4}, 
+            {n:'E4',d:0.4}, {n:'E4',d:0.4}, {n:'G4',d:0.4}, {n:'F4',d:0.8},
+            
+            // Hij brengt ons Sint Nicolaas, ik zie hem al staan
+            {n:'C4',d:0.4}, {n:'F4',d:0.4}, {n:'F4',d:0.4}, {n:'A4',d:0.4}, 
+            {n:'G4',d:0.2}, {n:'G4',d:0.2}, {n:'G4',d:0.4}, {n:'Bb4',d:0.4}, 
+            {n:'E4',d:0.4}, {n:'E4',d:0.4}, {n:'G4',d:0.4}, {n:'F4',d:0.8}, 
+            
+            // Hoe huppelt zijn paardje het dek op en neer
+            {n:'C5',d:0.4}, {n:'G4',d:0.4}, {n:'G4',d:0.4}, {n:'C5',d:0.4}, {n:'A4',d:0.2}, {n:'A4',d:0.2}, 
+            {n:'A4',d:0.4}, {n:'C5',d:0.4}, {n:'Bb4',d:0.4}, {n:'Bb4',d:0.4}, 
+            {n:'A4',d:0.4}, {n:'G4',d:0.8},
+            
+            // Hoe waaien de wimpels al heen en al weer
+            {n:'C4',d:0.4}, {n:'F4',d:0.4}, {n:'F4',d:0.2}, {n:'G4',d:0.2}, {n:'A4',d:0.2},{n:'Bb4',d:0.2}, 
+            {n:'C5',d:0.2}, {n:'C5',d:0.2}, {n:'A4',d:0.4}, {n:'F4',d:0.4}, 
+            {n:'Bb4',d:0.4}, {n:'G4',d:0.4}, {n:'E4',d:0.4}, {n:'F4',d:0.8},   
+            
+            {n:null, d:3.0} // Rust
+        ];
+
+        // Definieer de tempo's per level in ms
+        const TEMPOS = {
+            1: 800, // Langzaam
+            2: 650, // Gemiddeld
+            3: 450  // Snel
+        };
+
+        function toggleAudio() {
+            isMuted = !isMuted;
+            const btn = document.getElementById('mute-btn');
+            if(isMuted) {
+                btn.innerText = "🔇 Geluid Uit";
+                if(audioCtx.state === 'running') audioCtx.suspend();
+            } else {
+                btn.innerText = "🔊 Geluid Aan";
+                if(audioCtx.state === 'suspended') audioCtx.resume();
+            }
+        }
+
+        function playTone(freq, duration, type='sine') {
+            if(isMuted) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            // Foutcorrectie: Check of freq een geldig nummer is voordat we setValueAtTime aanroepen
+            if (!isFinite(freq)) {
+                console.error("Audio Error: Tried to play non-finite frequency. Skipping note.");
+                return; 
+            }
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            
+            // Envelope voor zachte start/stop
+            gain.gain.setValueAtTime(0, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.1, audioCtx.currentTime + 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        function playMelodyLoop() {
+            if(isMuted && audioCtx.state === 'running') return;
+
+            // Bepaal het huidige tempo op basis van het level
+            const tempo = TEMPOS[state.level] || TEMPOS[1]; 
+
+            const note = MELODY[currentNoteIndex];
+            if(note.n) {
+                playTone(NOTES[note.n], note.d, 'triangle'); 
+            }
+            
+            // Volgende noot plannen
+            melodyTimeout = setTimeout(() => {
+                currentNoteIndex = (currentNoteIndex + 1) % MELODY.length;
+                playMelodyLoop();
+            }, note.d * tempo);
+        }
+
+        function playCollectSound() {
+            if(isMuted) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.2);
+        }
+
+        function playCrashSound() {
+            if(isMuted) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(100, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + 0.3);
+            gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.3);
+        }
+
+
+        // --- GAME VARIABLES ---
+        let state = {
+            isPlaying: false,
+            level: 1,
+            score: 0,
+            speed: 0.3, 
+            targetScore: 10
+        };
+
+        const LEVEL_CONFIG = {
+            1: { speed: 0.3, target: 10, santa: false, trees: false, biome: 'city', name: 'De Binnenstad' },
+            2: { speed: 0.45, target: 10, santa: true, trees: false, biome: 'canal', name: 'De Grachten (Pas op de Kerstman!)' },
+            3: { speed: 0.6, target: 10, santa: true, trees: true, biome: 'snow', name: 'Het Sneeuwdorp' }
+        };
+
+        let scene, camera, renderer;
+        let playerGroup;
+        let snowSystem;
+        let smokeParticles = [];
+        let items = []; // Pepernoten
+        let dynamicObstacles = []; // Kerstmannen
+        let worldChunks = []; 
+        let obstacleColliders = []; // Statische obstakels (schoorstenen/bomen)
+        
+        let windowTexture, streetTexture;
+        let mousePos = { x: 0, y: 0 };
+        const BOUNDARY_X = 14;
+        const BOUNDARY_Y = 8;
+        const CHUNK_SIZE = 10; 
+        const WORLD_DEPTH = 120; 
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x0f172a, 0.012);
+            scene.background = new THREE.Color(0x0f172a);
+
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 150);
+            camera.position.set(0, 4, 12); 
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.body.appendChild(renderer.domElement);
+
+            // --- BELICHTING ---
+            const ambientLight = new THREE.AmbientLight(0x404060, 0.8); 
+            scene.add(ambientLight);
+            
+            const moonLight = new THREE.DirectionalLight(0xaaccff, 1.0); 
+            moonLight.position.set(20, 50, 20);
+            moonLight.castShadow = true;
+            moonLight.shadow.mapSize.width = 1024;
+            moonLight.shadow.mapSize.height = 1024;
+            scene.add(moonLight);
+
+            const cityLight = new THREE.DirectionalLight(0xffaa00, 0.3);
+            cityLight.position.set(-10, 10, -10);
+            scene.add(cityLight);
+
+            generateTextures();
+            createPlayerHorse();
+            createSnow();
+            initWorld(); 
+
+            window.addEventListener('resize', onWindowResize);
+            document.addEventListener('mousemove', onMouseMove);
+            
+            animate();
+        }
+
+        function generateTextures() {
+            const canvasW = document.createElement('canvas');
+            canvasW.width = 64; canvasW.height = 64;
+            const ctxW = canvasW.getContext('2d');
+            ctxW.fillStyle = '#2d1b0e'; 
+            ctxW.fillRect(0,0,64,64);
+            ctxW.fillStyle = '#ffdb58'; 
+            ctxW.fillRect(8, 8, 20, 20);
+            ctxW.fillRect(36, 8, 20, 20);
+            ctxW.fillRect(8, 36, 20, 20);
+            ctxW.fillRect(36, 36, 20, 20);
+            windowTexture = new THREE.CanvasTexture(canvasW);
+            windowTexture.magFilter = THREE.NearestFilter; 
+
+            const canvasS = document.createElement('canvas');
+            canvasS.width = 64; canvasS.height = 64;
+            const ctxS = canvasS.getContext('2d');
+            ctxS.fillStyle = '#333'; 
+            ctxS.fillRect(0,0,64,64);
+            ctxS.strokeStyle = '#222';
+            ctxS.lineWidth = 2;
+            ctxS.strokeRect(0,0,64,64); 
+            streetTexture = new THREE.CanvasTexture(canvasS);
+            streetTexture.wrapS = THREE.RepeatWrapping;
+            streetTexture.wrapT = THREE.RepeatWrapping;
+        }
+
+        // --- World & Obstacles ---
+        
+        function initWorld() {
+            for (let z = 0; z > -WORLD_DEPTH; z -= CHUNK_SIZE) {
+                spawnWorldChunk(z, 'city'); 
+            }
+        }
+
+        function spawnWorldChunk(zPos, biomeType) {
+            const chunkGroup = new THREE.Group();
+            chunkGroup.position.z = zPos;
+            
+            // Grond
+            let groundMat;
+            if (biomeType === 'canal') {
+                groundMat = new THREE.MeshPhongMaterial({ color: 0x001e36, shininess: 100, specular: 0x4444ff, flatShading: true });
+            } else if (biomeType === 'snow') {
+                groundMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1 });
+            } else {
+                groundMat = new THREE.MeshStandardMaterial({ map: streetTexture, color: 0x555555 });
+            }
+
+            const ground = new THREE.Mesh(new THREE.PlaneGeometry(60, CHUNK_SIZE), groundMat);
+            ground.rotation.x = -Math.PI / 2;
+            ground.position.y = -6; 
+            chunkGroup.add(ground);
+
+            // Huizen & Statische Obstakels
+            const sides = [-1, 1];
+            sides.forEach(side => {
+                if (Math.random() > 0.1) {
+                    const houseWidth = 4 + Math.random() * 3;
+                    const houseHeight = 5 + Math.random() * 8; 
+                    const houseDepth = CHUNK_SIZE - 1;
+                    
+                    let xOffset = (biomeType === 'city') ? 8 : 12;
+                    if (biomeType === 'canal') xOffset = 10;
+                    
+                    const houseGeo = new THREE.BoxGeometry(houseWidth, houseHeight, houseDepth);
+                    let color = (biomeType === 'snow' && Math.random() > 0.5) ? 0xdddddd : (Math.random() > 0.5 ? 0x8d4004 : 0x5c250a);
+                    const house = new THREE.Mesh(houseGeo, new THREE.MeshPhongMaterial({ color: color, map: windowTexture }));
+                    house.position.set(side * xOffset, -6 + (houseHeight/2), 0);
+                    house.castShadow = true;
+                    house.receiveShadow = true;
+                    chunkGroup.add(house);
+
+                    // Dak
+                    const roofHeight = 2;
+                    const roofMat = new THREE.MeshStandardMaterial({ color: biomeType === 'snow' ? 0xffffff : 0x222222 });
+                    const roof = new THREE.Mesh(new THREE.ConeGeometry(houseWidth * 0.8, roofHeight, 4), roofMat);
+                    roof.position.set(side * xOffset, -6 + houseHeight + (roofHeight/2), 0);
+                    roof.rotation.y = Math.PI / 4; 
+                    chunkGroup.add(roof);
+
+                    // OBSTAKEL LOGICA
+                    // 1. Schoorstenen (Alle levels)
+                    if (Math.random() > 0.5) {
+                        const chimneyH = 3 + Math.random() * 2;
+                        const chimney = new THREE.Mesh(
+                            new THREE.BoxGeometry(1.2, chimneyH, 1.2),
+                            new THREE.MeshStandardMaterial({ color: 0x4a0404 })
+                        );
+                        chimney.position.set(side * (xOffset - 1), -6 + houseHeight + chimneyH/2, 0);
+                        chunkGroup.add(chimney);
+                        chimney.userData = { isObstacle: true, name: "een schoorsteen" };
+                        obstacleColliders.push(chimney);
+
+                        // Rook generator punt
+                        chimney.userData.emitSmoke = true;
+                    }
+
+                    // 2. Satellietschotels (Vooral Level 1)
+                    if (biomeType === 'city' && Math.random() > 0.8) {
+                        const dishGroup = new THREE.Group();
+                        const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.1,2), new THREE.MeshBasicMaterial({color:0x999999}));
+                        const dish = new THREE.Mesh(new THREE.SphereGeometry(1, 8, 8, 0, Math.PI*2, 0, 0.5), new THREE.MeshStandardMaterial({color:0xeeeeee, side: THREE.DoubleSide}));
+                        dish.position.y = 1;
+                        dish.rotation.x = -Math.PI/4;
+                        dishGroup.add(pole, dish);
+                        dishGroup.position.set(side * (xOffset + 1), -6 + houseHeight + 1, 0);
+                        chunkGroup.add(dishGroup);
+                        
+                        dishGroup.userData = { isObstacle: true, name: "een satellietschotel" };
+                        // We maken een onzichtbare box collider voor de schotel
+                        const collider = new THREE.Mesh(new THREE.BoxGeometry(2,2,2), new THREE.MeshBasicMaterial({visible:false}));
+                        collider.position.copy(dishGroup.position);
+                        chunkGroup.add(collider);
+                        collider.userData = { isObstacle: true, name: "een satellietschotel" };
+                        obstacleColliders.push(collider);
+                    }
+                }
+            });
+
+            // 3. Kerstbomen (Level 3) - Op de weg
+            if (LEVEL_CONFIG[state.level].trees && Math.random() > 0.4) {
+                const treeH = 7;
+                const tree = new THREE.Mesh(
+                    new THREE.ConeGeometry(2.5, treeH, 8),
+                    new THREE.MeshStandardMaterial({ color: 0x0f5f0f }) 
+                );
+                
+                const roadX = (Math.random() - 0.5) * 12;
+                tree.position.set(roadX, -6 + treeH/2, 0);
+                chunkGroup.add(tree);
+                
+                tree.userData = { isObstacle: true, name: "een kerstboom" };
+                obstacleColliders.push(tree);
+
+                const baubleGeo = new THREE.SphereGeometry(0.3);
+                const baubleMat = new THREE.MeshBasicMaterial({color: 0xff0000});
+                for(let b=0; b<6; b++) {
+                    const bauble = new THREE.Mesh(baubleGeo, baubleMat);
+                    bauble.position.set((Math.random()-0.5)*2, (Math.random()-0.5)*3, 0.9);
+                    tree.add(bauble);
+                }
+            }
+
+            scene.add(chunkGroup);
+            worldChunks.push(chunkGroup);
+        }
+
+        // --- Kerstman Spawner ---
+        function spawnSanta() {
+            const santaGroup = new THREE.Group();
+            
+            const sleigh = new THREE.Mesh(new THREE.BoxGeometry(2, 1, 3), new THREE.MeshPhongMaterial({color: 0xff0000}));
+            santaGroup.add(sleigh);
+            
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.6), new THREE.MeshBasicMaterial({color: 0xffdbac}));
+            head.position.set(0, 1, 0);
+            santaGroup.add(head);
+            
+            const hat = new THREE.Mesh(new THREE.ConeGeometry(0.4, 0.8, 8), new THREE.MeshBasicMaterial({color: 0xff0000}));
+            hat.position.set(0, 1.6, 0);
+            santaGroup.add(hat);
+
+            const xPos = (Math.random() - 0.5) * BOUNDARY_X * 1.8;
+            const yPos = (Math.random() - 0.5) * BOUNDARY_Y + 2; 
+            santaGroup.position.set(xPos, yPos, -80);
+            santaGroup.rotation.y = Math.PI;
+
+            scene.add(santaGroup);
+            dynamicObstacles.push({ mesh: santaGroup, speed: 0.4 });
+        }
+
+        // --- Smoke Particles ---
+        function createSmoke(pos) {
+            const geo = new THREE.SphereGeometry(0.4, 4, 4);
+            const mat = new THREE.MeshBasicMaterial({ color: 0xaaaaaa, transparent: true, opacity: 0.6 });
+            const p = new THREE.Mesh(geo, mat);
+            p.position.copy(pos);
+            p.position.x += (Math.random()-0.5);
+            p.position.z += (Math.random()-0.5);
+            scene.add(p);
+            smokeParticles.push({ mesh: p, life: 1.0 });
+        }
+
+
+        // --- Update Loops ---
+
+        function updateWorld() {
+            const currentBiome = LEVEL_CONFIG[state.level].biome;
+            const speed = state.speed;
+
+            // Chunks bewegen
+            for (let i = worldChunks.length - 1; i >= 0; i--) {
+                const chunk = worldChunks[i];
+                chunk.position.z += speed; 
+
+                // Rook spawnen uit schoorstenen
+                if (Math.random() > 0.8) {
+                    chunk.traverse(child => {
+                        if (child.userData.emitSmoke) {
+                            const worldPos = new THREE.Vector3();
+                            child.getWorldPosition(worldPos);
+                            // Alleen spawnen als in beeld
+                            if (worldPos.z > -40 && worldPos.z < 10) {
+                                // Rook spawnt bovenop schoorsteen (y + hoogte/2)
+                                worldPos.y += 1; 
+                                createSmoke(worldPos);
+                            }
+                        }
+                    });
+                }
+
+                if (chunk.position.z > 10) {
+                    chunk.traverse(child => {
+                        if (child.userData.isObstacle) {
+                            const index = obstacleColliders.indexOf(child);
+                            if (index > -1) obstacleColliders.splice(index, 1);
+                        }
+                    });
+                    scene.remove(chunk);
+                    worldChunks.splice(i, 1);
+                    
+                    let minZ = 0;
+                    worldChunks.forEach(c => minZ = Math.min(minZ, c.position.z));
+                    spawnWorldChunk(minZ - CHUNK_SIZE, currentBiome);
+                }
+            }
+
+            // Kerstmannen bewegen
+            for (let i = dynamicObstacles.length - 1; i >= 0; i--) {
+                const obj = dynamicObstacles[i];
+                // Ze komen naar je toe, dus Z neemt toe. Ze bewegen sneller dan de wereld.
+                obj.mesh.position.z += (speed + obj.speed);
+                
+                // Beetje wiebelen
+                obj.mesh.position.y += Math.sin(Date.now() * 0.005 + obj.mesh.position.x) * 0.05;
+
+                if (obj.mesh.position.z > 10) {
+                    scene.remove(obj.mesh);
+                    dynamicObstacles.splice(i, 1);
+                }
+            }
+
+            // Rook updaten
+            for (let i = smokeParticles.length - 1; i >= 0; i--) {
+                const p = smokeParticles[i];
+                p.mesh.position.y += 0.05; // Rook stijgt
+                p.mesh.position.z += speed; // Rook beweegt mee met wereld
+                p.life -= 0.02;
+                p.mesh.material.opacity = p.life * 0.6;
+                p.mesh.scale.setScalar(1 + (1-p.life)*2); // Wordt groter
+                
+                if (p.life <= 0) {
+                    scene.remove(p.mesh);
+                    smokeParticles.splice(i, 1);
+                }
+            }
+        }
+
+        // --- Player & Environment Setup (Ongewijzigd) ---
+        function createPlayerHorse() {
+            playerGroup = new THREE.Group();
+            const horseGroup = new THREE.Group();
+            const whiteMat = new THREE.MeshPhongMaterial({ color: 0xffffff });
+            horseGroup.add(new THREE.Mesh(new THREE.BoxGeometry(1, 0.8, 2.2), whiteMat)); // Body
+            
+            const neck = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.8, 0.5), whiteMat);
+            neck.position.set(0, 0.6, -1.0); neck.rotation.x = -Math.PI / 4; horseGroup.add(neck);
+            
+            const head = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.8), whiteMat);
+            head.position.set(0, 1.1, -1.3); horseGroup.add(head);
+            
+            // Benen
+            const legGeo = new THREE.BoxGeometry(0.2, 0.8, 0.2);
+            [{x:0.3,y:-0.6,z:0.8}, {x:-0.3,y:-0.6,z:0.8}, {x:0.3,y:-0.6,z:-0.8}, {x:-0.3,y:-0.6,z:-0.8}].forEach(p => {
+                const l = new THREE.Mesh(legGeo, whiteMat); l.position.set(p.x, p.y, p.z); l.rotation.x = Math.PI/4; horseGroup.add(l);
+            });
+            playerGroup.add(horseGroup);
+
+            // Sinterklaas
+            const sintGroup = new THREE.Group();
+            sintGroup.position.set(0, 0.6, 0); 
+            const redMat = new THREE.MeshPhongMaterial({ color: 0xc62828 });
+            const goldMat = new THREE.MeshPhongMaterial({ color: 0xffd700, shininess: 100 });
+            
+            const robe = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.5, 0.8, 8), redMat); robe.position.y = 0.4; sintGroup.add(robe);
+            const headSint = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 8), new THREE.MeshPhongMaterial({ color: 0xffdbac })); headSint.position.y = 0.95; sintGroup.add(headSint);
+            const beard = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.2), whiteMat); beard.position.set(0, 0.85, -0.25); sintGroup.add(beard);
+            
+            const mitre = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.3, 0.6, 4), redMat); 
+            mitre.rotation.y = Math.PI/4; mitre.position.y = 1.4; sintGroup.add(mitre);
+            
+            const staff = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 2.5), goldMat); staff.position.set(0.4, 1.0, -0.5); staff.rotation.x = Math.PI/8; sintGroup.add(staff);
+            const curl = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.05, 8, 16, Math.PI*1.5), goldMat); curl.position.set(0.4, 2.2, -0.65); curl.rotation.z = Math.PI/2; curl.rotation.y = Math.PI/2; sintGroup.add(curl);
+            
+            playerGroup.add(sintGroup);
+            scene.add(playerGroup);
+        }
+
+        function createPepernootMesh() {
+            const mesh = new THREE.Mesh(new THREE.DodecahedronGeometry(0.5, 0), new THREE.MeshStandardMaterial({ color: 0xcd853f, roughness: 0.8 }));
+            mesh.scale.set(1 + (Math.random()-0.5)*0.4, 0.8 + (Math.random()-0.5)*0.3, 1 + (Math.random()-0.5)*0.4);
+            mesh.rotation.set(Math.random()*Math.PI, 0, Math.random()*Math.PI);
+            return mesh;
+        }
+
+        function createSnow() {
+            const geo = new THREE.BufferGeometry();
+            const positions = [];
+            for(let i=0; i<1500; i++) positions.push((Math.random()-0.5)*80, (Math.random()-0.5)*40, (Math.random()-0.5)*80);
+            geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            snowSystem = new THREE.Points(geo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.15, transparent: true, opacity: 0.8 }));
+            scene.add(snowSystem);
+        }
+
+        // --- Game Flow ---
+
+        function startGame() { 
+            document.getElementById('start-screen').style.display = 'none'; 
+            
+            // Start audio context on user click
+            if(audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            // Zorgt ervoor dat het tempo direct voor Level 1 wordt ingesteld (800)
+            clearTimeout(melodyTimeout); 
+            currentNoteIndex = 0;
+            playMelodyLoop();
+
+            resetGameParams(1); 
+            state.isPlaying = true; 
+        }
+
+        function startLevel(lvl) { 
+            document.querySelectorAll('.level-card').forEach(el => el.style.display = 'none'); 
+            
+            // Reset en start de loop met het nieuwe level-tempo
+            clearTimeout(melodyTimeout); 
+            currentNoteIndex = 0;
+            // Eerst state.level updaten, dan playMelodyLoop aanroepen
+            state.level = lvl; 
+            playMelodyLoop();
+
+            resetGameParams(lvl); 
+            state.isPlaying = true; 
+        }
+
+        function restartLevel() { 
+            document.getElementById('game-over-screen').style.display = 'none'; 
+            
+            // Reset en start de loop met het huidige level-tempo
+            clearTimeout(melodyTimeout); 
+            currentNoteIndex = 0;
+            playMelodyLoop();
+
+            resetGameParams(state.level); 
+            state.isPlaying = true; 
+        }
+
+        function resetGameParams(lvl) {
+            state.level = lvl; state.score = 0; state.targetScore = LEVEL_CONFIG[lvl].target; state.speed = LEVEL_CONFIG[lvl].speed;
+            
+            // FIX: Start positie omhoog zodat de speler niet direct botst bij herstart
+            playerGroup.position.set(0, 5, 0); 
+            // Reset de muispositie zodat de speler in het midden beweegt
+            mousePos = { x: 0, y: 5 }; 
+            
+            // Clean up
+            items.forEach(item => scene.remove(item.mesh)); items = [];
+            dynamicObstacles.forEach(obs => scene.remove(obs.mesh)); dynamicObstacles = [];
+            smokeParticles.forEach(p => scene.remove(p.mesh)); smokeParticles = [];
+
+            document.getElementById('score').innerText = '0';
+            document.getElementById('target').innerText = state.targetScore;
+            document.getElementById('level-display').innerText = lvl;
+            document.getElementById('biome-name').innerText = LEVEL_CONFIG[lvl].name;
+            scene.fog.color.setHex(lvl === 3 ? 0x1a2b3c : 0x0f172a);
+        }
+
+        function spawnItem() {
+            if (Math.random() > 0.03) return; 
+            const mesh = createPepernootMesh();
+            mesh.position.set((Math.random() - 0.5) * BOUNDARY_X * 1.5, (Math.random() - 0.5) * BOUNDARY_Y * 1.5, -60);
+            scene.add(mesh);
+            items.push({ mesh: mesh, active: true });
+        }
+
+        function checkCollisions() {
+            const playerPos = playerGroup.position.clone();
+            
+            // 1. Pepernoten
+            items.forEach(item => {
+                if (!item.active) return;
+                if (playerPos.distanceTo(item.mesh.position) < 2.5) {
+                    playCollectSound(); // PING!
+                    state.score++;
+                    document.getElementById('score').innerText = state.score;
+                    item.mesh.scale.set(0,0,0); scene.remove(item.mesh); item.active = false;
+                    checkWinCondition();
+                }
+            });
+
+            // 2. Obstakels
+            obstacleColliders.forEach(obst => {
+                const worldPos = new THREE.Vector3(); obst.getWorldPosition(worldPos);
+                if (worldPos.z > -5 && worldPos.z < 5) {
+                    if (Math.abs(playerPos.x - worldPos.x) < 1.5 && Math.abs(playerPos.y - worldPos.y) < 3.5) {
+                        playCrashSound(); // BOOM!
+                        gameOver(obst.userData.name || "een obstakel");
+                    }
+                }
+            });
+
+            // 3. Kerstman
+            dynamicObstacles.forEach(obs => {
+                if (playerPos.distanceTo(obs.mesh.position) < 3.0) {
+                    playCrashSound(); // BOOM!
+                    gameOver("de Kerstman");
+                }
+            });
+        }
+
+        function checkWinCondition() {
+            if (state.score >= state.targetScore) {
+                state.isPlaying = false;
+                // Stop de muziek loop
+                clearTimeout(melodyTimeout); 
+                currentNoteIndex = 0; // Reset voor de volgende keer
+                
+                if (state.level === 1) document.getElementById('level1-screen').style.display = 'block';
+                else if (state.level === 2) document.getElementById('level2-screen').style.display = 'block';
+                else if (state.level === 3) document.getElementById('end-screen').style.display = 'block';
+            }
+        }
+
+        function gameOver(reason) {
+            state.isPlaying = false;
+            // Stop de muziek loop
+            clearTimeout(melodyTimeout); 
+            currentNoteIndex = 0; // Reset voor de volgende keer
+
+            document.getElementById('crash-reason').innerText = "Je botste tegen " + reason + " aan!";
+            document.getElementById('game-over-screen').style.display = 'block';
+        }
+
+        function updateWorld() {
+            const currentBiome = LEVEL_CONFIG[state.level].biome;
+            const speed = state.speed;
+
+            // Chunks bewegen
+            for (let i = worldChunks.length - 1; i >= 0; i--) {
+                const chunk = worldChunks[i];
+                chunk.position.z += speed; 
+
+                // Rook spawnen uit schoorstenen
+                if (Math.random() > 0.8) {
+                    chunk.traverse(child => {
+                        if (child.userData.emitSmoke) {
+                            const worldPos = new THREE.Vector3();
+                            child.getWorldPosition(worldPos);
+                            // Alleen spawnen als in beeld
+                            if (worldPos.z > -40 && worldPos.z < 10) {
+                                // Rook spawnt bovenop schoorsteen (y + hoogte/2)
+                                worldPos.y += 1; 
+                                createSmoke(worldPos);
+                            }
+                        }
+                    });
+                }
+
+                if (chunk.position.z > 10) {
+                    chunk.traverse(child => {
+                        if (child.userData.isObstacle) {
+                            const index = obstacleColliders.indexOf(child);
+                            if (index > -1) obstacleColliders.splice(index, 1);
+                        }
+                    });
+                    scene.remove(chunk);
+                    worldChunks.splice(i, 1);
+                    
+                    let minZ = 0;
+                    worldChunks.forEach(c => minZ = Math.min(minZ, c.position.z));
+                    spawnWorldChunk(minZ - CHUNK_SIZE, currentBiome);
+                }
+            }
+
+            // Kerstmannen bewegen
+            for (let i = dynamicObstacles.length - 1; i >= 0; i--) {
+                const obj = dynamicObstacles[i];
+                // Ze komen naar je toe, dus Z neemt toe. Ze bewegen sneller dan de wereld.
+                obj.mesh.position.z += (speed + obj.speed);
+                
+                // Beetje wiebelen
+                obj.mesh.position.y += Math.sin(Date.now() * 0.005 + obj.mesh.position.x) * 0.05;
+
+                if (obj.mesh.position.z > 10) {
+                    scene.remove(obj.mesh);
+                    dynamicObstacles.splice(i, 1);
+                }
+            }
+
+            // Rook updaten
+            for (let i = smokeParticles.length - 1; i >= 0; i--) {
+                const p = smokeParticles[i];
+                p.mesh.position.y += 0.05; // Rook stijgt
+                p.mesh.position.z += speed; // Rook beweegt mee met wereld
+                p.life -= 0.02;
+                p.mesh.material.opacity = p.life * 0.6;
+                p.mesh.scale.setScalar(1 + (1-p.life)*2); // Wordt groter
+                
+                if (p.life <= 0) {
+                    scene.remove(p.mesh);
+                    smokeParticles.splice(i, 1);
+                }
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (!state.isPlaying) {
+                playerGroup.rotation.z = Math.sin(Date.now() * 0.002) * 0.1;
+                playerGroup.position.y += Math.sin(Date.now() * 0.005) * 0.01;
+                renderer.render(scene, camera);
+                return;
+            }
+
+            // Controls
+            // De Y-positie van de muis wordt nu geassocieerd met een hogere startpositie
+            playerGroup.position.x += (mousePos.x - playerGroup.position.x) * 0.1;
+            playerGroup.position.y += (mousePos.y - playerGroup.position.y) * 0.1;
+            playerGroup.rotation.z = -(mousePos.x - playerGroup.position.x) * 0.3;
+            playerGroup.rotation.x = (mousePos.y - playerGroup.position.y) * 0.2;
+
+            updateWorld();
+
+            // Spawners
+            spawnItem();
+            if (LEVEL_CONFIG[state.level].santa && Math.random() < 0.01) spawnSanta();
+
+            // Particles & Items movement
+            const snPos = snowSystem.geometry.attributes.position.array;
+            for(let i = 2; i < snPos.length; i += 3) {
+                snPos[i] += state.speed * 1.5; 
+                if (snPos[i] > 20) snPos[i] = -60; 
+            }
+            snowSystem.geometry.attributes.position.needsUpdate = true;
+
+            for (let i = items.length - 1; i >= 0; i--) {
+                const item = items[i];
+                item.mesh.position.z += state.speed; 
+                if(item.active) { item.mesh.rotation.x += 0.05; item.mesh.rotation.y += 0.05; }
+                if (item.mesh.position.z > 10) { scene.remove(item.mesh); items.splice(i, 1); }
+            }
+
+            checkCollisions();
+            renderer.render(scene, camera);
+        }
+
+        function onMouseMove(event) {
+            const tx = (event.clientX / window.innerWidth) * 2 - 1;
+            const ty = -(event.clientY / window.innerHeight) * 2 + 1;
+            mousePos.x = tx * BOUNDARY_X;
+            // De Y-muispositie wordt nu gemapt van 0 naar 10 (i.p.v. -8 tot 8) voor de hogere start
+            mousePos.y = (ty * BOUNDARY_Y) + 5; 
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
